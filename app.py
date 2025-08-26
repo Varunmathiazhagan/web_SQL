@@ -15,8 +15,9 @@ Usage:
     python app.py --start-url http://localhost:8000 --max-depth 2 --concurrency 10
 """
 
-import asyncio, aiohttp, argparse, json, csv, random, re, time, glob, os
+import asyncio, aiohttp, argparse, json, csv, random, re, time, glob, os, difflib
 from urllib.parse import urlparse, urljoin, parse_qs
+from urllib import robotparser
 
 # -------------------------
 # Config
@@ -64,7 +65,8 @@ def mutate_payload(payload):
 # Scanner class
 # -------------------------
 class AsyncSQLiScanner:
-    def __init__(self, start_url, max_depth=2, concurrency=5, delay=0.3, timeout=10, user_agents=None):
+    def __init__(self, start_url, max_depth=2, concurrency=5, delay=0.3, timeout=10, user_agents=None,
+                 max_retries=2, backoff_base=0.4, respect_robots=True, verbose=True, quiet=False):
         self.start_url = start_url.rstrip('/')
         self.domain = urlparse(start_url).netloc
         self.scheme = urlparse(start_url).scheme
@@ -78,33 +80,81 @@ class AsyncSQLiScanner:
         self.results = []
         self.form_targets = []  # accumulate discovered forms with params
         self._seen_findings = set()  # for de-duplication
+        self.max_retries = max_retries
+        self.backoff_base = backoff_base
+        self.respect_robots = respect_robots
+        self._robots = None  # robotparser.RobotFileParser or None
+        self.verbose = verbose and not quiet
+        self.quiet = quiet
+
+    def _log(self, msg):
+        if self.verbose and not self.quiet:
+            print(msg)
 
     async def fetch(self, session, url, method="GET", data=None):
         headers = {"User-Agent": random.choice(self.user_agents)}
-        try:
-            async with self.semaphore:
-                if method.upper() == "GET":
-                    async with session.get(url, headers=headers, params=(data or None), timeout=self.timeout) as resp:
-                        text = await resp.text()
-                        return resp.status, text
-                else:
-                    async with session.post(url, headers=headers, data=data, timeout=self.timeout) as resp:
-                        text = await resp.text()
-                        return resp.status, text
-        except Exception:
-            return None, ""
+        attempt = 0
+        while True:
+            try:
+                async with self.semaphore:
+                    if method.upper() == "GET":
+                        async with session.get(url, headers=headers, params=(data or None), timeout=self.timeout) as resp:
+                            text = await resp.text()
+                            # retry on 429 or 5xx
+                            if resp.status in (429,) or 500 <= resp.status < 600:
+                                raise aiohttp.ClientResponseError(request_info=resp.request_info, history=resp.history, status=resp.status, message="retryable status")
+                            return resp.status, text
+                    else:
+                        async with session.post(url, headers=headers, data=data, timeout=self.timeout) as resp:
+                            text = await resp.text()
+                            if resp.status in (429,) or 500 <= resp.status < 600:
+                                raise aiohttp.ClientResponseError(request_info=resp.request_info, history=resp.history, status=resp.status, message="retryable status")
+                            return resp.status, text
+            except Exception:
+                if attempt >= self.max_retries:
+                    return None, ""
+                # exponential backoff with jitter
+                sleep_for = self.backoff_base * (2 ** attempt) + random.uniform(0, 0.2)
+                await asyncio.sleep(sleep_for)
+                attempt += 1
 
     async def crawl(self):
         async with aiohttp.ClientSession() as session:
+            # load robots.txt once if enabled
+            if self.respect_robots:
+                await self._load_robots(session)
             while self.to_visit:
                 url, depth = self.to_visit.pop(0)
                 if url in self.visited or depth > self.max_depth:
+                    continue
+                if self.respect_robots and not self._can_fetch(url):
+                    self._log(f"[robots] Disallowed: {url}")
                     continue
                 self.visited.add(url)
                 status, text = await self.fetch(session, url)
                 await asyncio.sleep(self.delay)
                 if text:
                     await self.extract_links_forms(session, text, url, depth)
+
+    async def _load_robots(self, session):
+        try:
+            rp = robotparser.RobotFileParser()
+            robots_url = f"{self.scheme}://{self.domain}/robots.txt"
+            _, txt = await self.fetch(session, robots_url, method="GET")
+            if txt:
+                rp.parse(txt.splitlines())
+                self._robots = rp
+                self._log(f"[robots] Loaded robots.txt from {robots_url}")
+        except Exception:
+            self._robots = None
+
+    def _can_fetch(self, url):
+        if not self._robots:
+            return True
+        try:
+            return self._robots.can_fetch("AsyncSQLiScanner", url)
+        except Exception:
+            return True
 
     async def extract_links_forms(self, session, html, base_url, depth):
         from bs4 import BeautifulSoup
@@ -118,7 +168,7 @@ class AsyncSQLiScanner:
             parsed = urlparse(absolute)
             if parsed.netloc == self.domain:
                 normalized = parsed._replace(fragment='').geturl()
-                if normalized not in self.visited:
+                if normalized not in self.visited and (not self.respect_robots or self._can_fetch(normalized)):
                     self.to_visit.append((normalized, depth+1))
         # forms
         for form in soup.find_all('form'):
@@ -131,8 +181,9 @@ class AsyncSQLiScanner:
                 if name:
                     inputs[name] = inp.get('value') or 'test'
             # store as target for scanning
-            self.form_targets.append({"type": method, "url": absolute, "params": inputs})
-            if absolute not in self.visited:
+            if (not self.respect_robots) or self._can_fetch(absolute):
+                self.form_targets.append({"type": method, "url": absolute, "params": inputs})
+            if absolute not in self.visited and (not self.respect_robots or self._can_fetch(absolute)):
                 self.to_visit.append((absolute, depth+1))
 
     async def discover_targets(self):
@@ -169,7 +220,20 @@ class AsyncSQLiScanner:
             self._seen_findings.add(key)
             entry = {"url": base_url,"type":base_type,"param":param,"technique":tech,"payload":payload,"evidence":evidence}
             self.results.append(entry)
-            print(f"[!] VULN {tech}: {base_url} param={param} payload={payload}")
+            if not self.quiet:
+                print(f"[!] VULN {tech}: {base_url} param={param} payload={payload}")
+
+        def differ(a, b, len_threshold=0.02, ratio_threshold=0.90):
+            # consider different if either size delta is significant or similarity ratio is low
+            if not a or not b:
+                return False
+            if abs(len(a) - len(b)) > max(50, len_threshold * max(len(a), len(b))):
+                return True
+            try:
+                ratio = difflib.SequenceMatcher(None, a, b).quick_ratio()
+                return ratio < ratio_threshold
+            except Exception:
+                return False
 
         # Error-based
         for p in list(params.keys()):
@@ -183,7 +247,7 @@ class AsyncSQLiScanner:
                             record("error-based", p, mp, pat.pattern)
                     params[p] = original
 
-        # Boolean-based (blind) — try numeric and string context variants
+        # Boolean-based (blind) — try numeric and string context variants with diff ratio
         for p in list(params.keys()):
             orig = params[p]
             # numeric
@@ -194,8 +258,9 @@ class AsyncSQLiScanner:
             params[p] = orig + f_payload
             _, f_resp = await self.fetch(session, base_url, method=base_type, data=params)
             params[p] = orig
-            if abs(len(t_resp)-len(f_resp))>max(50,0.02*baseline_len):
-                record("boolean-blind", p, f"{t_payload}/{f_payload}", evidence=f"len_t={len(t_resp)} len_f={len(f_resp)}")
+            if differ(t_resp, f_resp):
+                sim = difflib.SequenceMatcher(None, t_resp, f_resp).quick_ratio() if t_resp and f_resp else 0.0
+                record("boolean-blind", p, f"{t_payload}/{f_payload}", evidence=f"sim={sim:.3f} len_t={len(t_resp)} len_f={len(f_resp)}")
 
             # string
             st_payload = mutate_payload(PAYLOADS['boolean_str_true'][0])[0]
@@ -205,8 +270,9 @@ class AsyncSQLiScanner:
             params[p] = orig + sf_payload
             _, sf_resp = await self.fetch(session, base_url, method=base_type, data=params)
             params[p] = orig
-            if abs(len(st_resp)-len(sf_resp))>max(50,0.02*baseline_len):
-                record("boolean-blind", p, f"{st_payload}/{sf_payload}", evidence=f"len_t={len(st_resp)} len_f={len(sf_resp)}")
+            if differ(st_resp, sf_resp):
+                sim = difflib.SequenceMatcher(None, st_resp, sf_resp).quick_ratio() if st_resp and sf_resp else 0.0
+                record("boolean-blind", p, f"{st_payload}/{sf_payload}", evidence=f"sim={sim:.3f} len_t={len(st_resp)} len_f={len(sf_resp)}")
 
         # Time-based tests are skipped for SQLite (no built-in SLEEP); could be added with heavy functions but omitted by default.
 
@@ -214,7 +280,8 @@ class AsyncSQLiScanner:
         async with aiohttp.ClientSession() as session:
             await self.crawl()
             targets = await self.discover_targets()
-            print(f"[+] {len(targets)} targets discovered")
+            if not self.quiet:
+                print(f"[+] {len(targets)} targets discovered")
             tasks = [self.test_target(session, t) for t in targets]
             await asyncio.gather(*tasks)
 
@@ -242,15 +309,33 @@ class AsyncSQLiScanner:
 # CLI
 # -------------------------
 def parse_args():
-    ap = argparse.ArgumentParser(description="Async MySQL-only crawler + SQLi scanner")
+    ap = argparse.ArgumentParser(description="Async crawler + SQLi scanner")
     ap.add_argument("--start-url", "-u", required=True)
     ap.add_argument("--max-depth", type=int, default=2)
     ap.add_argument("--concurrency", type=int, default=5)
     ap.add_argument("--delay", type=float, default=0.3)
+    ap.add_argument("--timeout", type=float, default=10)
+    ap.add_argument("--retries", type=int, default=2)
+    ap.add_argument("--backoff", type=float, default=0.4)
+    ap.add_argument("--no-robots", action="store_true", help="Ignore robots.txt")
+    g = ap.add_mutually_exclusive_group()
+    g.add_argument("--quiet", action="store_true")
+    g.add_argument("--verbose", action="store_true")
     return ap.parse_args()
 
 if __name__=="__main__":
     args = parse_args()
-    scanner = AsyncSQLiScanner(start_url=args.start_url, max_depth=args.max_depth, concurrency=args.concurrency, delay=args.delay)
+    scanner = AsyncSQLiScanner(
+        start_url=args.start_url,
+        max_depth=args.max_depth,
+        concurrency=args.concurrency,
+        delay=args.delay,
+        timeout=args.timeout,
+        max_retries=args.retries,
+        backoff_base=args.backoff,
+        respect_robots=(not args.no_robots),
+        verbose=args.verbose and not args.quiet,
+        quiet=args.quiet,
+    )
     asyncio.run(scanner.run())
     scanner.export_results()

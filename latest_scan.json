@@ -1,16 +1,8 @@
 [
   {
-    "url": "http://localhost:8000/admin.php",
+    "url": "http://localhost:8000/index.php",
     "type": "GET",
-    "param": "delete_comment",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "GET",
-    "param": "delete_user",
+    "param": "q",
     "technique": "error-based",
     "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -19,22 +11,6 @@
     "url": "http://localhost:8000/cart.php",
     "type": "POST",
     "param": "product_id",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/view_upload.php",
-    "type": "GET",
-    "param": "id",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "POST",
-    "param": "user_id",
     "technique": "error-based",
     "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -48,25 +24,33 @@
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
-    "url": "http://localhost:8000/login.php",
+    "url": "http://localhost:8000/index.php",
     "type": "POST",
-    "param": "username",
+    "param": "user_id",
     "technique": "error-based",
     "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
-    "url": "http://localhost:8000/admin.php",
+    "url": "http://localhost:8000/products.php",
     "type": "GET",
-    "param": "delete_comment",
+    "param": "q",
     "technique": "error-based",
-    "payload": "\"",
+    "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
     "url": "http://localhost:8000/search.php",
     "type": "GET",
     "param": "q",
+    "technique": "error-based",
+    "payload": "'",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/admin.php",
+    "type": "POST",
+    "param": "user_id",
     "technique": "error-based",
     "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -80,9 +64,17 @@
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
-    "url": "http://localhost:8000/admin.php",
+    "url": "http://localhost:8000/view_upload.php",
     "type": "GET",
-    "param": "delete_user",
+    "param": "id",
+    "technique": "error-based",
+    "payload": "'",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/admin.php",
+    "type": "POST",
+    "param": "comment_id",
     "technique": "error-based",
     "payload": "\"",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -92,7 +84,23 @@
     "type": "GET",
     "param": "q",
     "technique": "error-based",
+    "payload": "')",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/login.php",
+    "type": "POST",
+    "param": "username",
+    "technique": "error-based",
     "payload": "'",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/admin.php",
+    "type": "POST",
+    "param": "user_id",
+    "technique": "error-based",
+    "payload": "\"",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
@@ -108,22 +116,6 @@
     "type": "GET",
     "param": "q",
     "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "POST",
-    "param": "user_id",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "GET",
-    "param": "delete_user",
-    "technique": "error-based",
     "payload": "')",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
@@ -133,6 +125,14 @@
     "param": "user_id",
     "technique": "error-based",
     "payload": "\"",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/cart.php",
+    "type": "POST",
+    "param": "product_id",
+    "technique": "error-based",
+    "payload": "')",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
@@ -148,14 +148,6 @@
     "type": "POST",
     "param": "comment_id",
     "technique": "error-based",
-    "payload": "\"",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "GET",
-    "param": "delete_comment",
-    "technique": "error-based",
     "payload": "')",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
@@ -163,6 +155,46 @@
     "url": "http://localhost:8000/cart.php",
     "type": "POST",
     "param": "product_id",
+    "technique": "error-based",
+    "payload": "\" )",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/admin.php",
+    "type": "POST",
+    "param": "comment_id",
+    "technique": "error-based",
+    "payload": "\" )",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/admin.php",
+    "type": "POST",
+    "param": "user_id",
+    "technique": "error-based",
+    "payload": "')",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/login.php",
+    "type": "POST",
+    "param": "username",
+    "technique": "error-based",
+    "payload": "')",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/cart.php",
+    "type": "POST",
+    "param": "note",
+    "technique": "error-based",
+    "payload": "'",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/index.php",
+    "type": "POST",
+    "param": "user_id",
     "technique": "error-based",
     "payload": "')",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -176,14 +208,6 @@
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
-    "url": "http://localhost:8000/admin.php",
-    "type": "POST",
-    "param": "user_id",
-    "technique": "error-based",
-    "payload": "\"",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
     "url": "http://localhost:8000/view_upload.php",
     "type": "GET",
     "param": "id",
@@ -192,9 +216,25 @@
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
+    "url": "http://localhost:8000/cart.php",
+    "type": "POST",
+    "param": "note",
+    "technique": "error-based",
+    "payload": "\"",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
     "url": "http://localhost:8000/admin.php",
-    "type": "GET",
-    "param": "delete_user",
+    "type": "POST",
+    "param": "user_id",
+    "technique": "error-based",
+    "payload": "\" )",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/index.php",
+    "type": "POST",
+    "param": "user_id",
     "technique": "error-based",
     "payload": "\" )",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -202,31 +242,15 @@
   {
     "url": "http://localhost:8000/login.php",
     "type": "POST",
-    "param": "username",
+    "param": "password",
     "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "GET",
-    "param": "delete_comment",
-    "technique": "error-based",
-    "payload": "\" )",
+    "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
     "url": "http://localhost:8000/cart.php",
     "type": "POST",
-    "param": "product_id",
-    "technique": "error-based",
-    "payload": "\" )",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/products.php",
-    "type": "GET",
-    "param": "q",
+    "param": "note",
     "technique": "error-based",
     "payload": "')",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
@@ -234,57 +258,9 @@
   {
     "url": "http://localhost:8000/index.php",
     "type": "POST",
-    "param": "user_id",
+    "param": "comment",
     "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "POST",
-    "param": "comment_id",
-    "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "POST",
-    "param": "user_id",
-    "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "GET",
-    "param": "q",
-    "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "POST",
-    "param": "user_id",
-    "technique": "error-based",
-    "payload": "\" )",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "POST",
-    "param": "comment_id",
-    "technique": "error-based",
-    "payload": "\" )",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/admin.php",
-    "type": "POST",
-    "param": "user_id",
-    "technique": "error-based",
-    "payload": "\" )",
+    "payload": "'",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
@@ -293,79 +269,7 @@
     "param": "id",
     "technique": "boolean-blind",
     "payload": " AND 1=1 -- / AND 1=2 -- ",
-    "evidence": "len_t=1055 len_f=9"
-  },
-  {
-    "url": "http://localhost:8000/cart.php",
-    "type": "POST",
-    "param": "note",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "POST",
-    "param": "comment",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/login.php",
-    "type": "POST",
-    "param": "password",
-    "technique": "error-based",
-    "payload": "'",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/cart.php",
-    "type": "POST",
-    "param": "note",
-    "technique": "error-based",
-    "payload": "\"",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "POST",
-    "param": "comment",
-    "technique": "error-based",
-    "payload": "\"",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/login.php",
-    "type": "POST",
-    "param": "password",
-    "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/cart.php",
-    "type": "POST",
-    "param": "note",
-    "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "POST",
-    "param": "comment",
-    "technique": "error-based",
-    "payload": "')",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
-  },
-  {
-    "url": "http://localhost:8000/index.php",
-    "type": "POST",
-    "param": "comment",
-    "technique": "error-based",
-    "payload": "\" )",
-    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+    "evidence": "sim=0.015 len_t=1056 len_f=9"
   },
   {
     "url": "http://localhost:8000/cart.php",
@@ -378,17 +282,25 @@
   {
     "url": "http://localhost:8000/index.php",
     "type": "POST",
-    "param": "add_comment",
+    "param": "comment",
     "technique": "error-based",
-    "payload": "'",
+    "payload": "\"",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
     "url": "http://localhost:8000/index.php",
     "type": "POST",
-    "param": "add_comment",
+    "param": "comment",
     "technique": "error-based",
-    "payload": "\"",
+    "payload": "')",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/login.php",
+    "type": "POST",
+    "param": "password",
+    "technique": "error-based",
+    "payload": "')",
     "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
@@ -397,7 +309,31 @@
     "param": "q",
     "technique": "boolean-blind",
     "payload": "' OR '1'='1' -- /' OR '1'='2' -- ",
-    "evidence": "len_t=3320 len_f=1173"
+    "evidence": "sim=0.522 len_t=3320 len_f=1173"
+  },
+  {
+    "url": "http://localhost:8000/index.php",
+    "type": "POST",
+    "param": "comment",
+    "technique": "error-based",
+    "payload": "\" )",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/index.php",
+    "type": "POST",
+    "param": "add_comment",
+    "technique": "error-based",
+    "payload": "'",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
+  },
+  {
+    "url": "http://localhost:8000/index.php",
+    "type": "POST",
+    "param": "add_comment",
+    "technique": "error-based",
+    "payload": "\"",
+    "evidence": "SQLSTATE\\[[A-Z0-9]+\\]"
   },
   {
     "url": "http://localhost:8000/index.php",
